@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// The RTL home screen from the e-RAMO Figma design.
 ///
@@ -170,14 +171,25 @@ class _HomePageState extends State<HomePage> {
                     _header(),
                     _Promotion(
                       images: widget.images,
-                      title: 'منزل احلامك الاَن متوفر',
-                      subtitle:
-                          'مشروع كمبوند الشيخ زايد اكثر من 200 شقة ومحل في انتظارك',
-                      primaryImage: _livingRoom,
-                      otherImages: const [
-                        _apartment,
-                        'مشروع-عقاري-في-اسطنبول-1',
-                        '2e224a5e112ca',
+                      backgroundImage: _livingRoom,
+                      slides: const [
+                        (
+                          title: 'منزل احلامك الاَن متوفر',
+                          subtitle:
+                              'مشروع كمبوند الشيخ زايد اكثر من 200 شقة ومحل في انتظارك',
+                        ),
+                        (
+                          title: 'شقق سكنية في الشيخ زايد',
+                          subtitle: 'اكتشف الشقق المتاحة في كمبوند الشيخ زايد',
+                        ),
+                        (
+                          title: 'محلات في كمبوند الشيخ زايد',
+                          subtitle: 'تعرّف على المحلات المتاحة في المشروع',
+                        ),
+                        (
+                          title: 'اكتشف كمبوند الشيخ زايد',
+                          subtitle: 'تواصل معنا لمعرفة تفاصيل الشقق والمحلات',
+                        ),
                       ],
                       onContact: widget.onContact,
                     ),
@@ -194,14 +206,26 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 80),
                     _Promotion(
                       images: widget.images,
-                      title: 'مكتبك لازم يكون انيق',
-                      subtitle:
-                          'مشروع كمبوند الشيخ زايد اكثر من 200 مكتب ومحل في انتظارك',
-                      primaryImage: _office,
-                      otherImages: const [
-                        'مشروع-عقاري-في-اسطنبول-1',
-                        '2e224a5e112ca',
-                        _livingRoom,
+                      backgroundImage: _office,
+                      slides: const [
+                        (
+                          title: 'مكتبك لازم يكون انيق',
+                          subtitle:
+                              'مشروع كمبوند الشيخ زايد اكثر من 200 مكتب ومحل في انتظارك',
+                        ),
+                        (
+                          title: 'مكاتب في الشيخ زايد',
+                          subtitle:
+                              'اكتشف المكاتب المتاحة في كمبوند الشيخ زايد',
+                        ),
+                        (
+                          title: 'محلات تناسب نشاطك',
+                          subtitle: 'تعرّف على المحلات المتاحة في الشيخ زايد',
+                        ),
+                        (
+                          title: 'اعرف تفاصيل المكاتب والمحلات',
+                          subtitle: 'تواصل معنا للاستفسار عن الوحدات المتاحة',
+                        ),
                       ],
                       onContact: widget.onContact,
                     ),
@@ -260,28 +284,20 @@ class _HomePageState extends State<HomePage> {
                 Expanded(
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
-                    child: PopupMenuButton<String>(
-                      tooltip: 'اختيار المدينة',
-                      initialValue: _city,
-                      onSelected: _selectCity,
-                      itemBuilder: (context) => [
-                        for (final (city, _) in _cities)
-                          PopupMenuItem(value: city, child: _Label(city)),
-                      ],
-                      child: SizedBox(
-                        height: 42,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.location_on_outlined,
-                              color: _blue,
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(child: _Label(_city, size: 18)),
-                            const Icon(Icons.keyboard_arrow_down, color: _blue),
-                          ],
-                        ),
+                    child: SizedBox(
+                      height: 42,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const _HomeAsset(
+                            'location-icon',
+                            width: 18,
+                            height: 22,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(child: _Label(_city, size: 18)),
+                          const Icon(Icons.keyboard_arrow_down, color: _blue),
+                        ],
                       ),
                     ),
                   ),
@@ -299,7 +315,7 @@ class _HomePageState extends State<HomePage> {
                   onPressed: widget.onNotifications,
                 ),
                 _HeaderAction(
-                  const _HomeAsset('menu-icon', width: 26, height: 26),
+                  const _HomeAsset('home/menu-icon', width: 26, height: 26),
                   'القائمة',
                   onPressed: widget.onMenu,
                 ),
@@ -311,16 +327,13 @@ class _HomePageState extends State<HomePage> {
               child: TextField(
                 textAlign: TextAlign.right,
                 textInputAction: TextInputAction.search,
-                style: const TextStyle(
-                  fontFamily: 'Noto Kufi Arabic',
-                  fontSize: 16,
-                ),
+                style: const TextStyle(fontSize: 16),
                 onChanged: (value) => setState(() => _query = value.trim()),
                 onSubmitted: (value) => widget.onSearch?.call(value.trim()),
                 decoration: InputDecoration(
-                  hintText: 'إبحث عن عقارك',
+                  hintText: 'كيف يمكننا مساعدتك',
                   hintStyle: const TextStyle(color: Color(0x993C3C43)),
-                  prefixIcon: const Icon(Icons.search, size: 20, color: _grey),
+                  prefixIcon: const Icon(Icons.search, size: 24, color: _grey),
                   filled: true,
                   fillColor: const Color(0x1F767680),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8),
@@ -491,7 +504,6 @@ class _Label extends StatelessWidget {
       textAlign: align,
       textDirection: direction,
       style: TextStyle(
-        fontFamily: 'Noto Kufi Arabic',
         fontSize: size,
         height: size <= 12 ? 16 / size : 1.33,
         letterSpacing: size >= 14 ? -0.3 : 0,
@@ -537,8 +549,8 @@ class _HomeAsset extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/home/$name.png',
+    return SvgPicture.asset(
+      'assets/$name.svg',
       width: width,
       height: height,
       fit: BoxFit.contain,
@@ -636,10 +648,10 @@ class _Section extends StatelessWidget {
               ],
             ),
           ),
-          if (filters != null) filters!,
+          ?filters,
           SizedBox(height: filters == null ? 16 : 14),
           child,
-          if (footer != null) footer!,
+          ?footer,
         ],
       ),
     );
@@ -953,12 +965,7 @@ class _PropertyCard extends StatelessWidget {
                         color: Colors.black,
                       )
                     else
-                      Image.asset(
-                        'assets/buildings-icon.png',
-                        width: 13,
-                        height: 13,
-                        excludeFromSemantics: true,
-                      ),
+                      const _HomeAsset('buildings-icon', width: 13, height: 13),
                     const SizedBox(width: 3),
                     _Label(
                       listing.featured ? 'مميز' : 'مشروع',
@@ -1095,18 +1102,14 @@ class _IconLabel extends StatelessWidget {
 class _Promotion extends StatefulWidget {
   const _Promotion({
     required this.images,
-    required this.title,
-    required this.subtitle,
-    required this.primaryImage,
-    required this.otherImages,
+    required this.backgroundImage,
+    required this.slides,
     this.onContact,
   });
 
   final Map<String, ImageProvider<Object>> images;
-  final String title;
-  final String subtitle;
-  final String primaryImage;
-  final List<String> otherImages;
+  final String backgroundImage;
+  final List<({String title, String subtitle})> slides;
   final ValueChanged<String>? onContact;
 
   @override
@@ -1120,7 +1123,7 @@ class _PromotionState extends State<_Promotion> {
   void _goTo(int index) {
     if (!_pages.hasClients) return;
     _pages.animateToPage(
-      index % 4,
+      index % widget.slides.length,
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeOut,
     );
@@ -1134,7 +1137,7 @@ class _PromotionState extends State<_Promotion> {
 
   @override
   Widget build(BuildContext context) {
-    final slides = [widget.primaryImage, ...widget.otherImages];
+    const arrow = _HomeAsset('home/slider-circle-icon', width: 30, height: 30);
     return Column(
       children: [
         SizedBox(
@@ -1143,67 +1146,65 @@ class _PromotionState extends State<_Promotion> {
             alignment: Alignment.center,
             children: [
               Positioned.fill(
-                child: PageView.builder(
-                  controller: _pages,
-                  itemCount: slides.length,
-                  onPageChanged: (index) => setState(() => _page = index),
-                  itemBuilder: (context, index) =>
-                      _Photo(slides[index], widget.images),
-                ),
+                child: _Photo(widget.backgroundImage, widget.images),
               ),
               const Positioned.fill(
-                child: IgnorePointer(
-                  child: ColoredBox(color: Color(0x70000000)),
-                ),
+                child: ColoredBox(color: Color(0x70000000)),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 54),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IgnorePointer(
-                      child: _Label(
-                        widget.title,
-                        size: 14,
-                        color: Colors.white,
-                        maxLines: 2,
-                        align: TextAlign.center,
-                        weight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    IgnorePointer(
-                      child: _Label(
-                        widget.subtitle,
-                        color: Colors.white70,
-                        maxLines: 2,
-                        align: TextAlign.center,
-                        weight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    Material(
-                      color: _gold,
-                      borderRadius: BorderRadius.circular(4),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(4),
-                        onTap: widget.onContact == null
-                            ? null
-                            : () => widget.onContact!(widget.title),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          child: _Label(
-                            'تواصل الاَن',
+              Positioned.fill(
+                child: PageView.builder(
+                  controller: _pages,
+                  itemCount: widget.slides.length,
+                  onPageChanged: (index) => setState(() => _page = index),
+                  itemBuilder: (context, index) {
+                    final slide = widget.slides[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 54),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _Label(
+                            slide.title,
+                            size: 14,
                             color: Colors.white,
+                            maxLines: 2,
+                            align: TextAlign.center,
+                            weight: FontWeight.w600,
+                          ),
+                          const SizedBox(height: 7),
+                          _Label(
+                            slide.subtitle,
+                            color: Colors.white70,
+                            maxLines: 2,
+                            align: TextAlign.center,
                             weight: FontWeight.w500,
                           ),
-                        ),
+                          const SizedBox(height: 7),
+                          Material(
+                            color: _gold,
+                            borderRadius: BorderRadius.circular(4),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(4),
+                              onTap: widget.onContact == null
+                                  ? null
+                                  : () => widget.onContact!(slide.title),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 4,
+                                ),
+                                child: _Label(
+                                  'تواصل الاَن',
+                                  color: Colors.white,
+                                  weight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
               PositionedDirectional(
@@ -1211,10 +1212,7 @@ class _PromotionState extends State<_Promotion> {
                 child: IconButton(
                   tooltip: 'السابق',
                   onPressed: () => _goTo(_page - 1),
-                  icon: const Icon(
-                    Icons.arrow_circle_right,
-                    color: Colors.white,
-                  ),
+                  icon: Transform.flip(flipX: true, child: arrow),
                 ),
               ),
               PositionedDirectional(
@@ -1222,27 +1220,29 @@ class _PromotionState extends State<_Promotion> {
                 child: IconButton(
                   tooltip: 'التالي',
                   onPressed: () => _goTo(_page + 1),
-                  icon: const Icon(
-                    Icons.arrow_circle_left,
-                    color: Colors.white,
-                  ),
+                  icon: arrow,
                 ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 7),
-        _Dots(selected: _page, onSelected: _goTo),
+        _Dots(count: widget.slides.length, selected: _page, onSelected: _goTo),
       ],
     );
   }
 }
 
 class _Dots extends StatelessWidget {
-  const _Dots({required this.selected, required this.onSelected});
+  const _Dots({
+    required this.selected,
+    required this.onSelected,
+    this.count = 4,
+  });
 
   final int selected;
   final ValueChanged<int> onSelected;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
@@ -1250,7 +1250,7 @@ class _Dots extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       textDirection: TextDirection.ltr,
       children: [
-        for (var index = 0; index < 4; index++)
+        for (var index = 0; index < count; index++)
           Semantics(
             button: true,
             selected: index == selected,

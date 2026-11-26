@@ -1,11 +1,41 @@
-import 'dart:convert';
-
 import 'package:eramo_task/home_page.dart';
 import 'package:eramo_task/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+Finder _assetImage(String path) => find.byWidgetPredicate((widget) {
+  if (widget is! Image) return false;
+  final image = widget.image;
+  final source = image is ResizeImage ? image.imageProvider : image;
+  return source is AssetImage && source.assetName == path;
+});
+
+Finder _svg(String path) => find.byWidgetPredicate(
+  (widget) =>
+      widget is SvgPicture && widget.bytesLoader == SvgAssetLoader(path),
+);
+
+Finder _iconButton(String tooltip) => find.byWidgetPredicate(
+  (widget) => widget is IconButton && widget.tooltip == tooltip,
+);
+
+void _mobileViewport(WidgetTester tester) {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(390, 844);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+}
+
+Future<void> _scrollTo(WidgetTester tester, Finder target) async {
+  await tester.scrollUntilVisible(
+    target,
+    320,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -21,154 +51,247 @@ void main() {
     await fontLoader.load();
   });
 
-  testWidgets('Home uses the SVG icons and updated header', (tester) async {
-    await tester.pumpWidget(const MyApp());
+  testWidgets(
+    'Header uses SVG icons, bottom-right counts and a compact search prefix',
+    (tester) async {
+      _mobileViewport(tester);
+      await tester.pumpWidget(const MyApp());
 
-    expect(find.byType(HomePage), findsOneWidget);
-    for (final path in [
-      'assets/app-logo.svg',
-      'assets/home-icon.svg',
-      'assets/home/menu-icon.svg',
-    ]) {
-      final loader = SvgAssetLoader(path);
+      expect(find.byType(HomePage), findsOneWidget);
+      for (final path in [
+        'assets/app-logo.svg',
+        'assets/home-icon.svg',
+        'assets/home/menu-icon.svg',
+      ]) {
+        expect(_svg(path), findsOneWidget);
+        final loader = SvgAssetLoader(path);
+        final asset = await tester.runAsync(() => loader.loadBytes(null));
+        expect(asset?.lengthInBytes, greaterThan(0));
+      }
+
+      for (final (label, count) in [('الرسائل', '5'), ('الإشعارات', '2')]) {
+        final icon = tester.widget<IconButton>(_iconButton(label)).icon;
+        final badge = find.descendant(
+          of: find.byWidget(icon),
+          matching: find.byType(Positioned),
+        );
+        final placement = tester.widget<Positioned>(badge);
+        expect(placement.right, 0);
+        expect(placement.bottom, 0);
+        expect(
+          find.descendant(of: badge, matching: find.text(count)),
+          findsOneWidget,
+        );
+      }
+
+      final search = find.byType(TextField);
+      final decoration = tester.widget<TextField>(search).decoration!;
+      final prefix = decoration.prefixIcon! as Padding;
+      expect(decoration.hintText, 'كيف يمكننا مساعدتك');
+      expect(decoration.prefixIconConstraints?.maxWidth, 40);
+      expect((prefix.padding as EdgeInsetsDirectional).end, 4);
+      expect((prefix.child! as Icon).size, 24);
+      expect((prefix.child! as Icon).color, const Color(0xFF6C6C6C));
       expect(
-        find.byWidgetPredicate(
-          (widget) => widget is SvgPicture && widget.bytesLoader == loader,
+        Theme.of(tester.element(search)).textTheme.bodyMedium?.fontFamily,
+        'Noto Kufi Arabic',
+      );
+
+      await tester.tap(find.byIcon(Icons.keyboard_arrow_down));
+      await tester.pumpAndSettle();
+      expect(find.byType(PopupMenuItem<String>), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Both banners slide the matching photo and copy under fixed arrows',
+    (tester) async {
+      _mobileViewport(tester);
+      final contacted = <String>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(fontFamily: 'Noto Kufi Arabic'),
+          home: HomePage(onContact: contacted.add),
+        ),
+      );
+
+      const livingRoom = (
+        'منزل احلامك الاَن متوفر',
+        'assets/tmp/banner2-img.png',
+      );
+      const office = ('مكتبك لازم يكون انيق', 'assets/tmp/banner1-img.png');
+      for (final ((initialTitle, initialPath), (nextTitle, nextPath)) in [
+        (livingRoom, office),
+        (office, livingRoom),
+      ]) {
+        final initialSlide = find.text(initialTitle);
+        await _scrollTo(tester, initialSlide);
+        final controller = tester
+            .widget<PageView>(
+              find.ancestor(of: initialSlide, matching: find.byType(PageView)),
+            )
+            .controller;
+        final pages = find.byWidgetPredicate(
+          (widget) => widget is PageView && widget.controller == controller,
+        );
+        final banner = find
+            .ancestor(of: pages, matching: find.byType(Stack))
+            .first;
+        final previous = find.descendant(
+          of: banner,
+          matching: _iconButton('السابق'),
+        );
+        final next = find.descendant(
+          of: banner,
+          matching: _iconButton('التالي'),
+        );
+        expect(
+          find.descendant(
+            of: banner,
+            matching: _svg('assets/home/slider-circle-icon.svg'),
+          ),
+          findsNWidgets(2),
+        );
+        expect(
+          (tester.widget<IconButton>(previous).icon as Transform).transform
+              .entry(0, 0),
+          -1,
+        );
+
+        final initialPhoto = find.descendant(
+          of: pages,
+          matching: _assetImage(initialPath),
+        );
+        final initialCopy = find.descendant(of: pages, matching: initialSlide);
+        final photoX = tester.getTopLeft(initialPhoto).dx;
+        final copyX = tester.getTopLeft(initialCopy).dx;
+        final arrowBounds = (tester.getRect(previous), tester.getRect(next));
+        await tester.tap(next);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 80));
+        final photoMotion = tester.getTopLeft(initialPhoto).dx - photoX;
+        final copyMotion = tester.getTopLeft(initialCopy).dx - copyX;
+        expect(photoMotion.abs(), greaterThan(0));
+        expect(copyMotion, closeTo(photoMotion, 0.1));
+        expect((tester.getRect(previous), tester.getRect(next)), arrowBounds);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.descendant(of: pages, matching: _assetImage(nextPath)),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: pages, matching: find.text(nextTitle)),
+          findsOneWidget,
+        );
+        final contact = find.descendant(
+          of: pages,
+          matching: find.text('تواصل الاَن'),
+        );
+        await tester.tap(contact);
+        expect(contacted.last, nextTitle);
+
+        await tester.tap(previous);
+        await tester.pumpAndSettle();
+        expect(initialPhoto, findsOneWidget);
+        expect(initialCopy, findsOneWidget);
+        expect((tester.getRect(previous), tester.getRect(next)), arrowBounds);
+      }
+    },
+  );
+
+  testWidgets(
+    'Property favorites survive filters and use the bundled cover and logo',
+    (tester) async {
+      _mobileViewport(tester);
+      final opened = <String>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(fontFamily: 'Noto Kufi Arabic'),
+          home: HomePage(onItemSelected: opened.add),
+        ),
+      );
+
+      final saleCard = find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label ==
+                '4,000,000 ج.م، شقة سكنية للبيع تشطيب سوبر ...',
+      );
+      final cover = find.descendant(
+        of: saleCard,
+        matching: _assetImage('assets/tmp/reel-state-card-item-img.jpg'),
+      );
+      expect(cover, findsOneWidget);
+      expect(
+        find.descendant(
+          of: saleCard,
+          matching: _svg('assets/tmp/zillow-logo.svg'),
         ),
         findsOneWidget,
       );
-      final asset = await tester.runAsync(() => loader.loadBytes(null));
-      expect(asset?.lengthInBytes, greaterThan(0));
-    }
 
-    final search = find.byType(TextField);
-    final decoration = tester.widget<TextField>(search).decoration!;
-    expect(decoration.hintText, 'كيف يمكننا مساعدتك');
-    expect((decoration.prefixIcon! as Icon).size, 24);
-    expect(
-      Theme.of(tester.element(search)).textTheme.bodyMedium?.fontFamily,
-      'Noto Kufi Arabic',
-    );
+      Finder inCard(Finder matching) =>
+          find.descendant(of: saleCard, matching: matching);
+      Color? badgeColor(Finder label) {
+        final background = find
+            .ancestor(of: label, matching: find.byType(DecoratedBox))
+            .first;
+        return (tester.widget<DecoratedBox>(background).decoration
+                as BoxDecoration)
+            .color;
+      }
 
-    await tester.tap(find.byIcon(Icons.keyboard_arrow_down));
-    await tester.pumpAndSettle();
-    expect(find.byType(PopupMenuItem<String>), findsNothing);
-  });
+      final saleColor = badgeColor(inCard(find.text('للبيع')));
+      expect(saleColor, const Color(0xFFFFC700));
+      expect(badgeColor(inCard(find.text('مميز'))), saleColor);
+      for (final text in tester.widgetList<Text>(inCard(find.byType(Text)))) {
+        expect(text.style?.fontWeight, FontWeight.w600, reason: text.data);
+      }
 
-  testWidgets('Both banners slide the overlay over the same photo', (
+      final rent = find.widgetWithText(InkWell, 'للإيجار').first;
+      final all = find.widgetWithText(InkWell, 'الكل').first;
+      final rentText = find.descendant(
+        of: rent,
+        matching: find.text('للإيجار'),
+      );
+      expect(
+        tester.widget<Text>(rentText).style?.color,
+        const Color(0xFF898989),
+      );
+
+      await tester.tap(inCard(_iconButton('إضافة إلى المفضلة')));
+      await tester.pumpAndSettle();
+      expect(inCard(find.byIcon(Icons.favorite)), findsOneWidget);
+      expect(opened, isEmpty);
+      await tester.tap(rent);
+      await tester.pumpAndSettle();
+      expect(saleCard, findsNothing);
+      await tester.tap(all);
+      await tester.pumpAndSettle();
+      expect(inCard(find.byIcon(Icons.favorite)), findsOneWidget);
+
+      await tester.tap(inCard(_iconButton('إزالة من المفضلة')));
+      await tester.pumpAndSettle();
+      expect(inCard(find.byIcon(Icons.favorite_border)), findsOneWidget);
+      await tester.tap(cover);
+      expect(opened.single, 'شقة سكنية للبيع تشطيب سوبر ...');
+
+      await _scrollTo(tester, find.text('اهم المشاريع العقارية في مصر'));
+      expect(badgeColor(find.text('مشروع').first), const Color(0xFF145233));
+    },
+  );
+
+  testWidgets('City and news cards load their shared cover assets', (
     tester,
   ) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(390, 844);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
+    _mobileViewport(tester);
+    await tester.pumpWidget(const MyApp());
 
-    final livingRoom = MemoryImage(
-      base64Decode(
-        'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8z8DAwMDAxMDAwMDAAAANHQEDasKb6QAAAABJRU5ErkJggg==',
-      ),
-    );
-    final office = MemoryImage(
-      base64Decode(
-        'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGNkYPjPwMDAxMDAwMDAAAALHwEDmIWXfgAAAABJRU5ErkJggg==',
-      ),
-    );
-    final contacted = <String>[];
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(fontFamily: 'Noto Kufi Arabic'),
-        home: HomePage(
-          images: {
-            'pexels-vecislavas-popa-1643383': livingRoom,
-            'pexels-huseyn-kamaladdin-667838': office,
-          },
-          onContact: contacted.add,
-        ),
-      ),
-    );
+    await _scrollTo(tester, find.text('إبحث عن عقارك بالمدينة'));
+    expect(_assetImage('assets/tmp/city-img.jpg'), findsAtLeastNWidgets(2));
 
-    for (final (photo, initialTitle, nextTitle) in [
-      (livingRoom, 'منزل احلامك الاَن متوفر', 'شقق سكنية في الشيخ زايد'),
-      (office, 'مكتبك لازم يكون انيق', 'مكاتب في الشيخ زايد'),
-    ]) {
-      final initialSlide = find.text(initialTitle);
-      await tester.scrollUntilVisible(
-        initialSlide,
-        300,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pumpAndSettle();
-
-      final controller = tester
-          .widget<PageView>(
-            find.ancestor(of: initialSlide, matching: find.byType(PageView)),
-          )
-          .controller;
-      final banner = find.byWidgetPredicate(
-        (widget) => widget is PageView && widget.controller == controller,
-      );
-      final photoStack = find
-          .ancestor(of: banner, matching: find.byType(Stack))
-          .first;
-      final photoWidget = find.byWidgetPredicate(
-        (widget) => widget is Image && identical(widget.image, photo),
-      );
-      final background = find.descendant(of: photoStack, matching: photoWidget);
-      final originalPhoto = tester.element(background);
-      final photoBounds = tester.getRect(background);
-      final previous = find.descendant(
-        of: photoStack,
-        matching: find.byWidgetPredicate(
-          (widget) => widget is IconButton && widget.tooltip == 'السابق',
-        ),
-      );
-      final next = find.descendant(
-        of: photoStack,
-        matching: find.byWidgetPredicate(
-          (widget) => widget is IconButton && widget.tooltip == 'التالي',
-        ),
-      );
-      final arrow = find.byWidgetPredicate(
-        (widget) =>
-            widget is SvgPicture &&
-            widget.bytesLoader ==
-                const SvgAssetLoader('assets/home/slider-circle-icon.svg'),
-      );
-      expect(
-        find.descendant(of: photoStack, matching: arrow),
-        findsNWidgets(2),
-      );
-      expect(
-        (tester.widget<IconButton>(previous).icon as Transform).transform.entry(
-          0,
-          0,
-        ),
-        -1,
-      );
-      expect(find.descendant(of: banner, matching: photoWidget), findsNothing);
-
-      final titleBounds = tester.getRect(initialSlide);
-      await tester.tap(next);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 80));
-      expect(tester.getRect(background), photoBounds);
-      expect(tester.getRect(initialSlide), isNot(titleBounds));
-      await tester.pumpAndSettle();
-
-      expect(find.text(nextTitle), findsOneWidget);
-      expect(tester.element(background), same(originalPhoto));
-      expect(tester.getRect(background), photoBounds);
-      final contact = find.descendant(
-        of: photoStack,
-        matching: find.text('تواصل الاَن'),
-      );
-      await tester.tap(contact);
-      expect(contacted.last, nextTitle);
-
-      await tester.tap(previous);
-      await tester.pumpAndSettle();
-      expect(initialSlide, findsOneWidget);
-      expect(tester.element(background), same(originalPhoto));
-    }
+    await _scrollTo(tester, find.text('اهم الأخبار'));
+    expect(_assetImage('assets/tmp/news-img.png'), findsAtLeastNWidgets(2));
   });
 }

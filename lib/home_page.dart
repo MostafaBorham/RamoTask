@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 /// The RTL home screen from the e-RAMO Figma design.
 ///
-/// Provide banner and listing photos by their Figma image names in [images].
+/// Override bundled photos by their Figma image names in [images].
 /// The bundled logo can also be overridden with the 'ar logo' key.
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -40,11 +40,20 @@ const _background = Color(0xFFFCFCFC);
 const _blue = Color(0xFF005879);
 const _gold = Color(0xFFEAB010);
 const _grey = Color(0xFF6C6C6C);
+const _filterGrey = Color(0xFF898989);
+const _badgeGold = Color(0xFFFFC700);
+const _projectGreen = Color(0xFF145233);
+const _red = Color(0xFFE53935);
 const _border = Color(0xFFD9D9D9);
 const _livingRoom = 'pexels-vecislavas-popa-1643383';
 const _apartment = 'pexels-christa-grover-2121120';
-const _office = 'pexels-huseyn-kamaladdin-667838';
 const _companyLogo = 'agent-one.jpg';
+const _propertyCover = ResizeImage(
+  AssetImage('assets/tmp/reel-state-card-item-img.jpg'),
+  width: 960,
+);
+const _cityCover = AssetImage('assets/tmp/city-img.jpg');
+const _newsCover = AssetImage('assets/tmp/news-img.png');
 const _location = 'الشيخ زايد الجيزة';
 const _apartmentTitle = 'شقة سكنية للبيع تشطيب سوبر ...';
 const _projectTitle = 'كمبوند الشيخ زايد';
@@ -53,6 +62,26 @@ const _newsTitle = 'أحدث سوق إيجي';
 const _newsDescription =
     'هذا النص هو مثال لنص يمكن أن يستبدل في نفس المساحة، '
     'لقد تم توليد هذا النص من مولد النص العربى،';
+
+typedef _PromotionSlide = ({
+  String image,
+  AssetImage photo,
+  String title,
+  String subtitle,
+});
+
+const _homePromotion = (
+  image: _livingRoom,
+  photo: AssetImage('assets/tmp/banner2-img.png'),
+  title: 'منزل احلامك الاَن متوفر',
+  subtitle: 'مشروع كمبوند الشيخ زايد اكثر من 200 شقة ومحل في انتظارك',
+);
+const _officePromotion = (
+  image: 'pexels-huseyn-kamaladdin-667838',
+  photo: AssetImage('assets/tmp/banner1-img.png'),
+  title: 'مكتبك لازم يكون انيق',
+  subtitle: 'مشروع كمبوند الشيخ زايد اكثر من 200 مكتب ومحل في انتظارك',
+);
 
 const _cities = <(String, String)>[
   ('القاهرة', '213338'),
@@ -111,7 +140,13 @@ const _projects = [
   _Listing(_projectTitle, _projectDescription, '2e224a5e112ca'),
 ];
 const _apartments = [
-  _Listing(_sale, _apartmentTitle, _apartment, type: _ListingType.sale),
+  _Listing(
+    _sale,
+    _apartmentTitle,
+    _apartment,
+    type: _ListingType.sale,
+    featured: true,
+  ),
   _Listing(_rent, _apartmentTitle, _apartment, type: _ListingType.rent),
 ];
 const _villas = [
@@ -126,6 +161,7 @@ const _villas = [
     _apartmentTitle,
     '04c04e21-6970-438a-829f-eb480af54167',
     type: _ListingType.rent,
+    featured: true,
   ),
 ];
 const _duplexes = [
@@ -134,6 +170,7 @@ const _duplexes = [
     'دوبلكس للبيع تشطيب سوبر ...',
     '9066_1_or_1485286106',
     type: _ListingType.sale,
+    featured: true,
   ),
   _Listing(
     _rent,
@@ -144,12 +181,19 @@ const _duplexes = [
 ];
 
 class _HomePageState extends State<HomePage> {
+  final _favorites = <_Listing>{};
   String _city = _cities.first.$1;
   String _query = '';
 
   void _selectCity(String city) {
     setState(() => _city = city);
     widget.onItemSelected?.call(city);
+  }
+
+  void _toggleFavorite(_Listing listing) {
+    setState(() {
+      if (!_favorites.add(listing)) _favorites.remove(listing);
+    });
   }
 
   @override
@@ -171,26 +215,7 @@ class _HomePageState extends State<HomePage> {
                     _header(),
                     _Promotion(
                       images: widget.images,
-                      backgroundImage: _livingRoom,
-                      slides: const [
-                        (
-                          title: 'منزل احلامك الاَن متوفر',
-                          subtitle:
-                              'مشروع كمبوند الشيخ زايد اكثر من 200 شقة ومحل في انتظارك',
-                        ),
-                        (
-                          title: 'شقق سكنية في الشيخ زايد',
-                          subtitle: 'اكتشف الشقق المتاحة في كمبوند الشيخ زايد',
-                        ),
-                        (
-                          title: 'محلات في كمبوند الشيخ زايد',
-                          subtitle: 'تعرّف على المحلات المتاحة في المشروع',
-                        ),
-                        (
-                          title: 'اكتشف كمبوند الشيخ زايد',
-                          subtitle: 'تواصل معنا لمعرفة تفاصيل الشقق والمحلات',
-                        ),
-                      ],
+                      slides: const [_homePromotion, _officePromotion],
                       onContact: widget.onContact,
                     ),
                     const SizedBox(height: 80),
@@ -206,27 +231,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 80),
                     _Promotion(
                       images: widget.images,
-                      backgroundImage: _office,
-                      slides: const [
-                        (
-                          title: 'مكتبك لازم يكون انيق',
-                          subtitle:
-                              'مشروع كمبوند الشيخ زايد اكثر من 200 مكتب ومحل في انتظارك',
-                        ),
-                        (
-                          title: 'مكاتب في الشيخ زايد',
-                          subtitle:
-                              'اكتشف المكاتب المتاحة في كمبوند الشيخ زايد',
-                        ),
-                        (
-                          title: 'محلات تناسب نشاطك',
-                          subtitle: 'تعرّف على المحلات المتاحة في الشيخ زايد',
-                        ),
-                        (
-                          title: 'اعرف تفاصيل المكاتب والمحلات',
-                          subtitle: 'تواصل معنا للاستفسار عن الوحدات المتاحة',
-                        ),
-                      ],
+                      slides: const [_officePromotion, _homePromotion],
                       onContact: widget.onContact,
                     ),
                     const SizedBox(height: 80),
@@ -326,6 +331,7 @@ class _HomePageState extends State<HomePage> {
               height: 42,
               child: TextField(
                 textAlign: TextAlign.right,
+                textAlignVertical: TextAlignVertical.center,
                 textInputAction: TextInputAction.search,
                 style: const TextStyle(fontSize: 16),
                 onChanged: (value) => setState(() => _query = value.trim()),
@@ -333,7 +339,14 @@ class _HomePageState extends State<HomePage> {
                 decoration: InputDecoration(
                   hintText: 'كيف يمكننا مساعدتك',
                   hintStyle: const TextStyle(color: Color(0x993C3C43)),
-                  prefixIcon: const Icon(Icons.search, size: 24, color: _grey),
+                  isDense: true,
+                  prefixIconConstraints: const BoxConstraints.tightFor(
+                    width: 40,
+                  ),
+                  prefixIcon: const Padding(
+                    padding: EdgeInsetsDirectional.only(start: 12, end: 4),
+                    child: Icon(Icons.search, size: 24, color: _grey),
+                  ),
                   filled: true,
                   fillColor: const Color(0x1F767680),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8),
@@ -361,6 +374,8 @@ class _HomePageState extends State<HomePage> {
       listings: listings,
       images: widget.images,
       query: _query,
+      favorites: _favorites,
+      onFavorite: _toggleFavorite,
       compact: compact,
       showFilters: showFilters,
       onViewAll: widget.onViewAll,
@@ -385,7 +400,7 @@ class _HomePageState extends State<HomePage> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    _Photo(image, widget.images),
+                    _Photo(image, widget.images, fallback: _cityCover),
                     const DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -452,7 +467,11 @@ class _HomePageState extends State<HomePage> {
                       height: 125,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(19),
-                        child: _Photo(image, widget.images),
+                        child: _Photo(
+                          image,
+                          widget.images,
+                          fallback: _newsCover,
+                        ),
                       ),
                     ),
                     const Padding(
@@ -515,10 +534,11 @@ class _Label extends StatelessWidget {
 }
 
 class _Photo extends StatelessWidget {
-  const _Photo(this.name, this.images);
+  const _Photo(this.name, this.images, {this.fallback});
 
   final String name;
   final Map<String, ImageProvider<Object>> images;
+  final ImageProvider<Object>? fallback;
 
   @override
   Widget build(BuildContext context) {
@@ -526,7 +546,7 @@ class _Photo extends StatelessWidget {
       color: Color(0xFFD8E5E9),
       child: Center(child: Icon(Icons.image_outlined, color: _blue, size: 26)),
     );
-    final image = images[name];
+    final image = images[name] ?? fallback;
     return image == null
         ? placeholder
         : Image(
@@ -580,18 +600,25 @@ class _HeaderAction extends StatelessWidget {
           children: [
             icon,
             if (count != null)
-              PositionedDirectional(
-                top: 0,
-                end: 0,
+              Positioned(
+                bottom: 0,
+                right: 0,
                 child: DecoratedBox(
                   decoration: const BoxDecoration(
-                    color: Color(0xFFE53935),
+                    color: _red,
                     shape: BoxShape.circle,
                   ),
                   child: SizedBox.square(
                     dimension: 13,
                     child: Center(
-                      child: _Label(count!, color: Colors.white, size: 9),
+                      child: Text(
+                        count!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          height: 1,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -715,17 +742,13 @@ class _CardSurface extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          child,
-          if (onTap != null)
-            Positioned.fill(
-              child: Semantics(
-                label: label,
-                button: true,
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(onTap: onTap),
-                ),
-              ),
+          if (onTap == null)
+            child
+          else
+            Semantics(
+              label: label,
+              button: true,
+              child: InkWell(onTap: onTap, child: child),
             ),
           IgnorePointer(
             child: DecoratedBox(
@@ -747,6 +770,8 @@ class _ListingSection extends StatefulWidget {
     required this.listings,
     required this.images,
     required this.query,
+    required this.favorites,
+    required this.onFavorite,
     required this.compact,
     required this.showFilters,
     this.onViewAll,
@@ -757,6 +782,8 @@ class _ListingSection extends StatefulWidget {
   final List<_Listing> listings;
   final Map<String, ImageProvider<Object>> images;
   final String query;
+  final Set<_Listing> favorites;
+  final ValueChanged<_Listing> onFavorite;
   final bool compact;
   final bool showFilters;
   final ValueChanged<String>? onViewAll;
@@ -837,7 +864,7 @@ class _ListingSectionState extends State<_ListingSection> {
                           child: _Label(
                             filter.label,
                             size: 14,
-                            color: _filter == filter ? _blue : Colors.black,
+                            color: _filter == filter ? _blue : _filterGrey,
                             weight: _filter == filter
                                 ? FontWeight.w600
                                 : FontWeight.w400,
@@ -882,6 +909,8 @@ class _ListingSectionState extends State<_ListingSection> {
                       listing: listing,
                       compact: widget.compact,
                       images: widget.images,
+                      isFavorite: widget.favorites.contains(listing),
+                      onFavorite: () => widget.onFavorite(listing),
                       onTap: widget.onItemSelected == null
                           ? null
                           : () => widget.onItemSelected!(
@@ -902,12 +931,16 @@ class _PropertyCard extends StatelessWidget {
     required this.listing,
     required this.compact,
     required this.images,
+    required this.isFavorite,
+    required this.onFavorite,
     this.onTap,
   });
 
   final _Listing listing;
   final bool compact;
   final Map<String, ImageProvider<Object>> images;
+  final bool isFavorite;
+  final VoidCallback onFavorite;
   final VoidCallback? onTap;
 
   @override
@@ -915,7 +948,7 @@ class _PropertyCard extends StatelessWidget {
     final photo = Stack(
       fit: StackFit.expand,
       children: [
-        _Photo(listing.image, images),
+        _Photo(listing.image, images, fallback: _propertyCover),
         if (!listing.isProject)
           Positioned(
             left: 1,
@@ -923,7 +956,11 @@ class _PropertyCard extends StatelessWidget {
             bottom: compact ? null : 0,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: listing.featured ? _gold : _border,
+                color: listing.type == _ListingType.sale
+                    ? _badgeGold
+                    : listing.featured
+                    ? _gold
+                    : _border,
                 borderRadius: const BorderRadius.only(
                   topRight: Radius.circular(8),
                 ),
@@ -935,48 +972,50 @@ class _PropertyCard extends StatelessWidget {
                   child: _Label(
                     listing.type.label,
                     color: _blue,
-                    weight: FontWeight.w500,
+                    weight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
           ),
-        if (listing.featured || listing.isProject)
-          Positioned(
-            right: 0,
-            bottom: 7,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: listing.featured ? const Color(0xFFFFC700) : _blue,
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(30),
-                ),
+        Positioned(
+          right: 0,
+          bottom: 7,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: listing.featured ? _badgeGold : _projectGreen,
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(30),
               ),
-              child: SizedBox(
-                width: 60,
-                height: 19,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (listing.featured)
-                      const Icon(
-                        Icons.star_rounded,
-                        size: 13,
-                        color: Colors.black,
-                      )
-                    else
-                      const _HomeAsset('buildings-icon', width: 13, height: 13),
-                    const SizedBox(width: 3),
-                    _Label(
+            ),
+            child: SizedBox(
+              width: 60,
+              height: 19,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (listing.featured)
+                    const Icon(
+                      Icons.star_rounded,
+                      size: 13,
+                      color: Colors.black,
+                    )
+                  else
+                    const _HomeAsset('buildings-icon', width: 13, height: 13),
+                  const SizedBox(width: 3),
+                  Flexible(
+                    child: _Label(
                       listing.featured ? 'مميز' : 'مشروع',
                       size: 10,
                       color: listing.featured ? Colors.black : Colors.white,
+                      weight: FontWeight.w600,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
+        ),
       ],
     );
     final details = Padding(
@@ -987,17 +1026,28 @@ class _PropertyCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _Label(listing.title, size: 14, weight: FontWeight.w700),
+                child: _Label(listing.title, size: 14, weight: FontWeight.w600),
               ),
-              const Icon(
-                Icons.favorite_border,
-                size: 16,
-                color: Color(0xFFB4B4B4),
+              IconButton(
+                onPressed: onFavorite,
+                isSelected: isFavorite,
+                tooltip: isFavorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة',
+                icon: const Icon(
+                  Icons.favorite_border,
+                  color: Color(0xFFB4B4B4),
+                ),
+                selectedIcon: const Icon(Icons.favorite, color: _red),
+                style: IconButton.styleFrom(
+                  iconSize: 16,
+                  minimumSize: const Size.square(32),
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 3),
-          _Label(listing.subtitle, color: _grey, weight: FontWeight.w500),
+          _Label(listing.subtitle, color: _grey, weight: FontWeight.w600),
           if (!listing.isProject) ...[
             const SizedBox(height: 9),
             const Row(
@@ -1037,13 +1087,23 @@ class _PropertyCard extends StatelessWidget {
               ),
               Column(
                 children: [
-                  const _Label('بواسطة', size: 10),
+                  const _Label('بواسطة', size: 10, weight: FontWeight.w600),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(30),
                     child: SizedBox(
                       width: 48,
                       height: 33,
-                      child: _Photo(_companyLogo, images),
+                      child: images.containsKey(_companyLogo)
+                          ? _Photo(_companyLogo, images)
+                          : Semantics(
+                              label: 'Zillow',
+                              image: true,
+                              child: const _HomeAsset(
+                                'tmp/zillow-logo',
+                                width: 48,
+                                height: 33,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -1093,7 +1153,13 @@ class _IconLabel extends StatelessWidget {
       children: [
         icon,
         const SizedBox(width: 3),
-        _Label(label, size: 10, color: _grey, direction: direction),
+        _Label(
+          label,
+          size: 10,
+          color: _grey,
+          weight: FontWeight.w600,
+          direction: direction,
+        ),
       ],
     );
   }
@@ -1102,14 +1168,12 @@ class _IconLabel extends StatelessWidget {
 class _Promotion extends StatefulWidget {
   const _Promotion({
     required this.images,
-    required this.backgroundImage,
     required this.slides,
     this.onContact,
   });
 
   final Map<String, ImageProvider<Object>> images;
-  final String backgroundImage;
-  final List<({String title, String subtitle})> slides;
+  final List<_PromotionSlide> slides;
   final ValueChanged<String>? onContact;
 
   @override
@@ -1146,63 +1210,68 @@ class _PromotionState extends State<_Promotion> {
             alignment: Alignment.center,
             children: [
               Positioned.fill(
-                child: _Photo(widget.backgroundImage, widget.images),
-              ),
-              const Positioned.fill(
-                child: ColoredBox(color: Color(0x70000000)),
-              ),
-              Positioned.fill(
                 child: PageView.builder(
                   controller: _pages,
                   itemCount: widget.slides.length,
                   onPageChanged: (index) => setState(() => _page = index),
                   itemBuilder: (context, index) {
                     final slide = widget.slides[index];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 54),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _Label(
-                            slide.title,
-                            size: 14,
-                            color: Colors.white,
-                            maxLines: 2,
-                            align: TextAlign.center,
-                            weight: FontWeight.w600,
-                          ),
-                          const SizedBox(height: 7),
-                          _Label(
-                            slide.subtitle,
-                            color: Colors.white70,
-                            maxLines: 2,
-                            align: TextAlign.center,
-                            weight: FontWeight.w500,
-                          ),
-                          const SizedBox(height: 7),
-                          Material(
-                            color: _gold,
-                            borderRadius: BorderRadius.circular(4),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(4),
-                              onTap: widget.onContact == null
-                                  ? null
-                                  : () => widget.onContact!(slide.title),
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 4,
-                                ),
-                                child: _Label(
-                                  'تواصل الاَن',
-                                  color: Colors.white,
-                                  weight: FontWeight.w500,
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _Photo(
+                          slide.image,
+                          widget.images,
+                          fallback: slide.photo,
+                        ),
+                        const ColoredBox(color: Color(0x70000000)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 54),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _Label(
+                                slide.title,
+                                size: 14,
+                                color: Colors.white,
+                                maxLines: 2,
+                                align: TextAlign.center,
+                                weight: FontWeight.w600,
+                              ),
+                              const SizedBox(height: 7),
+                              _Label(
+                                slide.subtitle,
+                                color: Colors.white70,
+                                maxLines: 2,
+                                align: TextAlign.center,
+                                weight: FontWeight.w500,
+                              ),
+                              const SizedBox(height: 7),
+                              Material(
+                                color: _gold,
+                                borderRadius: BorderRadius.circular(4),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(4),
+                                  onTap: widget.onContact == null
+                                      ? null
+                                      : () => widget.onContact!(slide.title),
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 4,
+                                    ),
+                                    child: _Label(
+                                      'تواصل الاَن',
+                                      color: Colors.white,
+                                      weight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     );
                   },
                 ),

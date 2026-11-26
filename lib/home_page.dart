@@ -299,7 +299,7 @@ class _HomePageState extends State<HomePage> {
                   onPressed: widget.onNotifications,
                 ),
                 _HeaderAction(
-                  const Icon(Icons.menu, color: _blue, size: 23),
+                  const _HomeAsset('menu-icon', width: 26, height: 26),
                   'القائمة',
                   onPressed: widget.onMenu,
                 ),

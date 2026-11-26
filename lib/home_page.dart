@@ -70,86 +70,90 @@ class _HomePageState extends State<HomePage> {
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.dark,
         child: Scaffold(
-          extendBody: true,
           backgroundColor: HomeColors.background,
           body: SafeArea(
             bottom: false,
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 600),
-                child: Builder(builder: _buildHomeList),
+                child: ListView(
+                  padding: const EdgeInsets.only(bottom: 32),
+                  children: [
+                    HomeHeader(
+                      city: _city,
+                      topInset: MediaQuery.paddingOf(context).top,
+                      logo: widget.images['ar logo'],
+                      onQueryChanged: (value) =>
+                          setState(() => _query = value.trim()),
+                      onSearch: widget.onSearch,
+                      onMenu: widget.onMenu,
+                      onNotifications: widget.onNotifications,
+                      onMessages: widget.onMessages,
+                    ),
+                    PromotionCarousel(
+                      images: widget.images,
+                      slides: const [
+                        content.homePromotion,
+                        content.officePromotion,
+                      ],
+                      onContact: widget.onContact,
+                    ),
+                    _sectionGap,
+                    _listings('عقارات مميزة في مصر', content.featuredListings),
+                    _sectionGap,
+                    _listings(
+                      'اهم المشاريع العقارية في مصر',
+                      content.projectListings,
+                      showFilters: false,
+                    ),
+                    _sectionGap,
+                    HomeCitySection(
+                      cities: content.homeCities,
+                      images: widget.images,
+                      onCitySelected: _selectCity,
+                      onViewAll: widget.onViewAll,
+                    ),
+                    _sectionGap,
+                    PromotionCarousel(
+                      images: widget.images,
+                      slides: const [
+                        content.officePromotion,
+                        content.homePromotion,
+                      ],
+                      onContact: widget.onContact,
+                    ),
+                    _sectionGap,
+                    _listings(
+                      'أحدث الشقق في مصر',
+                      content.apartmentListings,
+                      compact: true,
+                    ),
+                    _sectionGap,
+                    _listings(
+                      'أحدث الفيلات في مصر',
+                      content.villaListings,
+                      compact: true,
+                    ),
+                    _sectionGap,
+                    _listings(
+                      'أحدث الدوبلكس في مصر',
+                      content.duplexListings,
+                      compact: true,
+                    ),
+                    _sectionGap,
+                    HomeNewsSection(
+                      images: widget.images,
+                      onViewAll: widget.onViewAll,
+                      onItemSelected: widget.onItemSelected,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
           bottomNavigationBar: HomeBottomBar(onSelected: widget.onNavigation),
         ),
       ),
-    );
-  }
-
-  Widget _buildHomeList(BuildContext bodyContext) {
-    return ListView(
-      padding: EdgeInsets.only(
-        bottom: 32 + MediaQuery.paddingOf(bodyContext).bottom,
-      ),
-      children: [
-        HomeHeader(
-          city: _city,
-          topInset: MediaQuery.paddingOf(context).top,
-          logo: widget.images['ar logo'],
-          onQueryChanged: (value) => setState(() => _query = value.trim()),
-          onSearch: widget.onSearch,
-          onMenu: widget.onMenu,
-          onNotifications: widget.onNotifications,
-          onMessages: widget.onMessages,
-        ),
-        PromotionCarousel(
-          images: widget.images,
-          slides: const [content.homePromotion, content.officePromotion],
-          onContact: widget.onContact,
-        ),
-        _sectionGap,
-        _listings('عقارات مميزة في مصر', content.featuredListings),
-        _sectionGap,
-        _listings(
-          'اهم المشاريع العقارية في مصر',
-          content.projectListings,
-          showFilters: false,
-        ),
-        _sectionGap,
-        HomeCitySection(
-          cities: content.homeCities,
-          images: widget.images,
-          onCitySelected: _selectCity,
-          onViewAll: widget.onViewAll,
-        ),
-        _sectionGap,
-        PromotionCarousel(
-          images: widget.images,
-          slides: const [content.officePromotion, content.homePromotion],
-          onContact: widget.onContact,
-        ),
-        _sectionGap,
-        _listings(
-          'أحدث الشقق في مصر',
-          content.apartmentListings,
-          compact: true,
-        ),
-        _sectionGap,
-        _listings('أحدث الفيلات في مصر', content.villaListings, compact: true),
-        _sectionGap,
-        _listings(
-          'أحدث الدوبلكس في مصر',
-          content.duplexListings,
-          compact: true,
-        ),
-        _sectionGap,
-        HomeNewsSection(
-          images: widget.images,
-          onViewAll: widget.onViewAll,
-          onItemSelected: widget.onItemSelected,
-        ),
-      ],
     );
   }
 

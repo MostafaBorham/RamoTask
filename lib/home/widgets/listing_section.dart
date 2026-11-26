@@ -53,7 +53,10 @@ class _ListingSectionState extends State<ListingSection> {
   @override
   void didUpdateWidget(covariant ListingSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.query != widget.query) _resetCarousel();
+    if (oldWidget.query != widget.query ||
+        oldWidget.listings != widget.listings) {
+      _resetCarousel();
+    }
   }
 
   void _resetCarousel() {
@@ -61,11 +64,11 @@ class _ListingSectionState extends State<ListingSection> {
     if (_scroll.hasClients) _scroll.jumpTo(0);
   }
 
-  bool _trackScroll(ScrollNotification notification) {
+  bool _trackScroll(ScrollNotification notification, int lastDot) {
     final metrics = notification.metrics;
     if (metrics.axis == Axis.horizontal && metrics.maxScrollExtent > 0) {
-      final dot = (3 * metrics.pixels / metrics.maxScrollExtent)
-          .clamp(0.0, 3.0)
+      final dot = (lastDot * metrics.pixels / metrics.maxScrollExtent)
+          .clamp(0, lastDot)
           .round();
       if (dot != _dot) setState(() => _dot = dot);
     }
@@ -81,6 +84,7 @@ class _ListingSectionState extends State<ListingSection> {
               .toLowerCase()
               .contains(query);
     }).toList();
+    final lastDot = visible.length - 1;
 
     return HomeSection(
       title: widget.title,
@@ -125,15 +129,16 @@ class _ListingSectionState extends State<ListingSection> {
               ),
             )
           : null,
-      footer: widget.compact && visible.length > 1
+      footer: widget.compact && visible.isNotEmpty
           ? Padding(
               padding: const EdgeInsets.only(top: 16),
               child: PaginationDots(
+                count: visible.length,
                 selected: _dot,
                 onSelected: (index) {
-                  if (!_scroll.hasClients) return;
+                  if (lastDot == 0 || !_scroll.hasClients) return;
                   _scroll.animateTo(
-                    _scroll.position.maxScrollExtent * index / 3,
+                    _scroll.position.maxScrollExtent * index / lastDot,
                     duration: const Duration(milliseconds: 240),
                     curve: Curves.easeOut,
                   );
@@ -151,7 +156,8 @@ class _ListingSectionState extends State<ListingSection> {
               ),
             )
           : NotificationListener<ScrollNotification>(
-              onNotification: _trackScroll,
+              onNotification: (notification) =>
+                  _trackScroll(notification, lastDot),
               child: HorizontalCards(
                 height: widget.compact ? 171 : 309,
                 controller: _scroll,

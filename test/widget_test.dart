@@ -1,4 +1,5 @@
 import 'package:eramo_task/home_page.dart';
+import 'package:eramo_task/home/widgets/pagination_dots.dart';
 import 'package:eramo_task/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -387,6 +388,44 @@ void main() {
         );
       }
     }
+  });
+
+  testWidgets('Listing dots follow the visible cards and reset on filtering', (
+    tester,
+  ) async {
+    _mobileViewport(tester);
+    await tester.pumpWidget(const MyApp());
+
+    final heading = find.text('أحدث الشقق في مصر');
+    await _scrollTo(tester, heading);
+    final section = find
+        .ancestor(of: heading, matching: find.byType(Column))
+        .first;
+    final dots = find.descendant(
+      of: section,
+      matching: find.byType(PaginationDots),
+    );
+    expect(tester.widget<PaginationDots>(dots).count, 2);
+
+    await tester.ensureVisible(dots);
+    await tester.tap(
+      find.descendant(of: dots, matching: find.byType(InkWell)).last,
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<PaginationDots>(dots).selected, 1);
+
+    final rentFilter = find
+        .descendant(
+          of: section,
+          matching: find.widgetWithText(InkWell, 'للإيجار'),
+        )
+        .first;
+    await tester.ensureVisible(rentFilter);
+    await tester.pumpAndSettle();
+    await tester.tap(rentFilter);
+    await tester.pumpAndSettle();
+    expect(tester.widget<PaginationDots>(dots).count, 1);
+    expect(tester.widget<PaginationDots>(dots).selected, 0);
   });
 
   testWidgets('Home button is half above the bottom navigation and tappable', (

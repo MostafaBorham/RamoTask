@@ -45,7 +45,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-const _sectionGap = SizedBox(height: 40);
+const _sectionGap = SizedBox(height: 48);
 
 class _HomePageState extends State<HomePage> {
   final _favorites = <Listing>{};

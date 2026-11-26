@@ -7,7 +7,7 @@ class PaginationDots extends StatelessWidget {
     super.key,
     required this.selected,
     required this.onSelected,
-    this.count = 4,
+    required this.count,
   });
 
   final int selected;

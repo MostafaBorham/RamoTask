@@ -21,9 +21,9 @@ Finder _iconButton(String tooltip) => find.byWidgetPredicate(
   (widget) => widget is IconButton && widget.tooltip == tooltip,
 );
 
-void _mobileViewport(WidgetTester tester) {
+void _mobileViewport(WidgetTester tester, {double width = 390}) {
   tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = const Size(390, 844);
+  tester.view.physicalSize = Size(width, 844);
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
 }
@@ -52,9 +52,9 @@ void main() {
   });
 
   testWidgets(
-    'Header uses SVG icons, bottom-right counts and a compact search prefix',
+    'Header matches the search layout and keeps bottom-right counts',
     (tester) async {
-      _mobileViewport(tester);
+      _mobileViewport(tester, width: 428);
       await tester.pumpWidget(const MyApp());
 
       expect(find.byType(HomePage), findsOneWidget);
@@ -88,9 +88,24 @@ void main() {
       final decoration = tester.widget<TextField>(search).decoration!;
       final prefix = decoration.prefixIcon! as Padding;
       expect(decoration.hintText, 'كيف يمكننا مساعدتك');
-      expect(decoration.prefixIconConstraints?.maxWidth, 40);
-      expect((prefix.padding as EdgeInsetsDirectional).end, 4);
-      expect((prefix.child! as Icon).size, 24);
+      expect(
+        decoration.contentPadding,
+        const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      );
+      expect(
+        (decoration.border as OutlineInputBorder).borderRadius,
+        BorderRadius.circular(10),
+      );
+      expect(tester.getRect(search), const Rect.fromLTWH(23, 160, 381, 42));
+      expect(
+        tester.getRect(find.byIcon(Icons.search)),
+        const Rect.fromLTWH(374, 170, 22, 22),
+      );
+      expect(
+        tester.getRect(find.byIcon(Icons.search)).left -
+            tester.getRect(find.text('كيف يمكننا مساعدتك')).right,
+        6,
+      );
       expect((prefix.child! as Icon).color, const Color(0xFF6C6C6C));
       expect(
         Theme.of(tester.element(search)).textTheme.bodyMedium?.fontFamily,
@@ -102,6 +117,22 @@ void main() {
       expect(find.byType(PopupMenuItem<String>), findsNothing);
     },
   );
+
+  testWidgets('Location wraps beside the header actions on a narrow screen', (
+    tester,
+  ) async {
+    _mobileViewport(tester, width: 280);
+    await tester.pumpWidget(const MyApp());
+
+    final location = find.text('القاهرة').first;
+    expect(tester.getSize(location).height, greaterThan(24));
+    expect(tester.getRect(_iconButton('القائمة')).left, 23);
+    expect(
+      tester.getRect(location).left,
+      greaterThan(tester.getRect(_iconButton('الرسائل')).right),
+    );
+    expect(tester.getSize(find.byType(TextField)).width, 234);
+  });
 
   testWidgets(
     'Both banners slide the matching photo and copy under fixed arrows',
@@ -153,9 +184,25 @@ void main() {
           findsNWidgets(2),
         );
         expect(
-          (tester.widget<IconButton>(previous).icon as Transform).transform
+          tester
+              .widget<Transform>(
+                find
+                    .ancestor(
+                      of: find.descendant(
+                        of: previous,
+                        matching: _svg('assets/home/slider-circle-icon.svg'),
+                      ),
+                      matching: find.byType(Transform),
+                    )
+                    .first,
+              )
+              .transform
               .entry(0, 0),
           -1,
+        );
+        expect(
+          find.descendant(of: banner, matching: find.byType(BackdropFilter)),
+          findsNWidgets(2),
         );
 
         final initialPhoto = find.descendant(
@@ -233,18 +280,26 @@ void main() {
 
       Finder inCard(Finder matching) =>
           find.descendant(of: saleCard, matching: matching);
-      Color? badgeColor(Finder label) {
+      DecoratedBox badgeBox(Finder label) {
         final background = find
             .ancestor(of: label, matching: find.byType(DecoratedBox))
             .first;
-        return (tester.widget<DecoratedBox>(background).decoration
-                as BoxDecoration)
-            .color;
+        return tester.widget<DecoratedBox>(background);
       }
+
+      Color? badgeColor(Finder label) =>
+          (badgeBox(label).decoration as BoxDecoration).color;
 
       final saleColor = badgeColor(inCard(find.text('للبيع')));
       expect(saleColor, const Color(0xFFFFC700));
-      expect(badgeColor(inCard(find.text('مميز'))), saleColor);
+      final featuredBadge = inCard(find.text('مميز'));
+      expect(badgeColor(featuredBadge), saleColor);
+      final badgePadding = badgeBox(featuredBadge).child! as Padding;
+      expect(
+        badgePadding.padding,
+        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      );
+      expect((badgePadding.child! as Row).mainAxisSize, MainAxisSize.min);
       for (final text in tester.widgetList<Text>(inCard(find.byType(Text)))) {
         expect(text.style?.fontWeight, FontWeight.w600, reason: text.data);
       }
@@ -260,7 +315,14 @@ void main() {
         const Color(0xFF898989),
       );
 
-      await tester.tap(inCard(_iconButton('إضافة إلى المفضلة')));
+      final favorite = inCard(_iconButton('إضافة إلى المفضلة'));
+      final favoriteStyle = tester.widget<IconButton>(favorite).style!;
+      expect(favoriteStyle.splashFactory, NoSplash.splashFactory);
+      expect(
+        favoriteStyle.overlayColor?.resolve({WidgetState.pressed}),
+        Colors.transparent,
+      );
+      await tester.tap(favorite);
       await tester.pumpAndSettle();
       expect(inCard(find.byIcon(Icons.favorite)), findsOneWidget);
       expect(opened, isEmpty);
@@ -278,9 +340,75 @@ void main() {
       expect(opened.single, 'شقة سكنية للبيع تشطيب سوبر ...');
 
       await _scrollTo(tester, find.text('اهم المشاريع العقارية في مصر'));
-      expect(badgeColor(find.text('مشروع').first), const Color(0xFF145233));
+      expect(badgeColor(find.text('مشروع').first), const Color(0xFF13D142));
     },
   );
+
+  testWidgets('The three compact property sections leave out status badges', (
+    tester,
+  ) async {
+    _mobileViewport(tester);
+    await tester.pumpWidget(const MyApp());
+
+    for (final title in [
+      'أحدث الشقق في مصر',
+      'أحدث الفيلات في مصر',
+      'أحدث الدوبلكس في مصر',
+    ]) {
+      final heading = find.text(title);
+      await _scrollTo(tester, heading);
+      final section = find
+          .ancestor(of: heading, matching: find.byType(Column))
+          .first;
+      expect(
+        find.descendant(
+          of: section,
+          matching: _iconButton('إضافة إلى المفضلة'),
+        ),
+        findsWidgets,
+      );
+      for (final label in ['مشروع', 'مميز']) {
+        expect(
+          find.descendant(of: section, matching: find.text(label)),
+          findsNothing,
+        );
+      }
+    }
+  });
+
+  testWidgets('Bottom navigation uses the market asset and top-aligned items', (
+    tester,
+  ) async {
+    _mobileViewport(tester);
+    final destinations = <HomeDestination>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(fontFamily: 'Noto Kufi Arabic'),
+        home: HomePage(onNavigation: destinations.add),
+      ),
+    );
+
+    final market = _assetImage('assets/home/market-icon.png');
+    expect(market, findsOneWidget);
+    final row = find.ancestor(of: market, matching: find.byType(Row)).first;
+    expect(
+      tester.widget<Row>(row).crossAxisAlignment,
+      CrossAxisAlignment.start,
+    );
+    final panel = find
+        .ancestor(of: row, matching: find.byType(DecoratedBox))
+        .first;
+    final decoration =
+        tester.widget<DecoratedBox>(panel).decoration as BoxDecoration;
+    expect(
+      decoration.borderRadius,
+      const BorderRadius.vertical(bottom: Radius.circular(18)),
+    );
+    expect(tester.getRect(row).top - tester.getRect(panel).top, 10);
+    expect(tester.getRect(panel).bottom - tester.getRect(row).bottom, 22);
+    await tester.tap(market);
+    expect(destinations.single, HomeDestination.market);
+  });
 
   testWidgets('City and news cards load their shared cover assets', (
     tester,

@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -42,9 +44,10 @@ const _gold = Color(0xFFEAB010);
 const _grey = Color(0xFF6C6C6C);
 const _filterGrey = Color(0xFF898989);
 const _badgeGold = Color(0xFFFFC700);
-const _projectGreen = Color(0xFF145233);
+const _projectGreen = Color(0xFF13D142);
 const _red = Color(0xFFE53935);
 const _border = Color(0xFFD9D9D9);
+const _sectionGap = SizedBox(height: 40);
 const _livingRoom = 'pexels-vecislavas-popa-1643383';
 const _apartment = 'pexels-christa-grover-2121120';
 const _companyLogo = 'agent-one.jpg';
@@ -218,29 +221,29 @@ class _HomePageState extends State<HomePage> {
                       slides: const [_homePromotion, _officePromotion],
                       onContact: widget.onContact,
                     ),
-                    const SizedBox(height: 80),
+                    _sectionGap,
                     _listings('عقارات مميزة في مصر', _featured),
-                    const SizedBox(height: 80),
+                    _sectionGap,
                     _listings(
                       'اهم المشاريع العقارية في مصر',
                       _projects,
                       showFilters: false,
                     ),
-                    const SizedBox(height: 80),
+                    _sectionGap,
                     _citySection(),
-                    const SizedBox(height: 80),
+                    _sectionGap,
                     _Promotion(
                       images: widget.images,
                       slides: const [_officePromotion, _homePromotion],
                       onContact: widget.onContact,
                     ),
-                    const SizedBox(height: 80),
+                    _sectionGap,
                     _listings('أحدث الشقق في مصر', _apartments, compact: true),
-                    const SizedBox(height: 80),
+                    _sectionGap,
                     _listings('أحدث الفيلات في مصر', _villas, compact: true),
-                    const SizedBox(height: 80),
+                    _sectionGap,
                     _listings('أحدث الدوبلكس في مصر', _duplexes, compact: true),
-                    const SizedBox(height: 80),
+                    _sectionGap,
                     _news(),
                   ],
                 ),
@@ -254,6 +257,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _header() {
+    const padding = EdgeInsets.fromLTRB(23, 12, 23, 16);
+    const searchGap = 6.0;
+    final searchOffset = 160 - MediaQuery.paddingOf(context).top;
+    final headerContentHeight = (searchOffset - padding.top - searchGap).clamp(
+      0.0,
+      160.0,
+    );
     final logo = widget.images['ar logo'];
     return DecoratedBox(
       decoration: const BoxDecoration(
@@ -267,97 +277,112 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(23, 12, 23, 16),
+        padding: padding,
         child: Column(
           children: [
-            SizedBox(
-              height: 44,
-              child: Center(
-                child: logo == null
-                    ? const _HomeAsset('app-logo', width: 98, height: 28)
-                    : Image(
-                        image: logo,
-                        width: 98,
-                        height: 44,
-                        fit: BoxFit.contain,
-                      ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: SizedBox(
-                      height: 42,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const _HomeAsset(
-                            'location-icon',
-                            width: 18,
-                            height: 22,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(child: _Label(_city, size: 18)),
-                          const Icon(Icons.keyboard_arrow_down, color: _blue),
-                        ],
-                      ),
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: headerContentHeight),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  SizedBox(
+                    height: 44,
+                    child: Center(
+                      child: logo == null
+                          ? const _HomeAsset('app-logo', width: 98, height: 28)
+                          : Image(
+                              image: logo,
+                              width: 98,
+                              height: 44,
+                              fit: BoxFit.contain,
+                            ),
                     ),
                   ),
-                ),
-                _HeaderAction(
-                  const _HomeAsset('message-icon', width: 26, height: 26),
-                  'الرسائل',
-                  count: '5',
-                  onPressed: widget.onMessages,
-                ),
-                _HeaderAction(
-                  const _HomeAsset('notification-icon', width: 19, height: 25),
-                  'الإشعارات',
-                  count: '2',
-                  onPressed: widget.onNotifications,
-                ),
-                _HeaderAction(
-                  const _HomeAsset('home/menu-icon', width: 26, height: 26),
-                  'القائمة',
-                  onPressed: widget.onMenu,
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            SizedBox(
-              height: 42,
-              child: TextField(
-                textAlign: TextAlign.right,
-                textAlignVertical: TextAlignVertical.center,
-                textInputAction: TextInputAction.search,
-                style: const TextStyle(fontSize: 16),
-                onChanged: (value) => setState(() => _query = value.trim()),
-                onSubmitted: (value) => widget.onSearch?.call(value.trim()),
-                decoration: InputDecoration(
-                  hintText: 'كيف يمكننا مساعدتك',
-                  hintStyle: const TextStyle(color: Color(0x993C3C43)),
-                  isDense: true,
-                  prefixIconConstraints: const BoxConstraints.tightFor(
-                    width: 40,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: _locationAndActions(),
                   ),
-                  prefixIcon: const Padding(
-                    padding: EdgeInsetsDirectional.only(start: 12, end: 4),
-                    child: Icon(Icons.search, size: 24, color: _grey),
-                  ),
-                  filled: true,
-                  fillColor: const Color(0x1F767680),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
+                ],
               ),
             ),
+            const SizedBox(height: searchGap),
+            Align(alignment: Alignment.centerLeft, child: _searchField()),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _locationAndActions() {
+    return Row(
+      spacing: 8,
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              const _HomeAsset('location-icon', width: 18, height: 22),
+              const SizedBox(width: 4),
+              Flexible(child: _Label(_city, size: 18, maxLines: null)),
+              const Icon(Icons.keyboard_arrow_down, color: _blue),
+            ],
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _HeaderAction(
+              const _HomeAsset('message-icon', width: 26, height: 26),
+              'الرسائل',
+              count: '5',
+              onPressed: widget.onMessages,
+            ),
+            _HeaderAction(
+              const _HomeAsset('notification-icon', width: 19, height: 25),
+              'الإشعارات',
+              count: '2',
+              onPressed: widget.onNotifications,
+            ),
+            _HeaderAction(
+              const _HomeAsset('home/menu-icon', width: 26, height: 26),
+              'القائمة',
+              onPressed: widget.onMenu,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _searchField() {
+    return SizedBox(
+      width: 381,
+      height: 42,
+      child: TextField(
+        textAlign: TextAlign.right,
+        textAlignVertical: TextAlignVertical.center,
+        textInputAction: TextInputAction.search,
+        style: const TextStyle(fontSize: 16, height: 22 / 16),
+        onChanged: (value) => setState(() => _query = value.trim()),
+        onSubmitted: (value) => widget.onSearch?.call(value.trim()),
+        decoration: const InputDecoration(
+          hintText: 'كيف يمكننا مساعدتك',
+          hintStyle: TextStyle(color: Color(0x993C3C43)),
+          isDense: true,
+          prefixIconConstraints: BoxConstraints.tightFor(width: 32, height: 22),
+          prefixIcon: Padding(
+            // Material 3 supplies 4 dp of spacing after the prefix icon.
+            padding: EdgeInsetsDirectional.only(start: 8, end: 2),
+            child: Icon(Icons.search, size: 22, color: _grey),
+          ),
+          filled: true,
+          fillColor: Color(0x1F767680),
+          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+            borderSide: BorderSide.none,
+            gapPadding: 0,
+          ),
         ),
       ),
     );
@@ -510,7 +535,7 @@ class _Label extends StatelessWidget {
   final double size;
   final Color color;
   final FontWeight weight;
-  final int maxLines;
+  final int? maxLines;
   final TextAlign? align;
   final TextDirection? direction;
 
@@ -519,7 +544,7 @@ class _Label extends StatelessWidget {
     return Text(
       text,
       maxLines: maxLines,
-      overflow: TextOverflow.ellipsis,
+      overflow: maxLines == null ? TextOverflow.clip : TextOverflow.ellipsis,
       textAlign: align,
       textDirection: direction,
       style: TextStyle(
@@ -978,44 +1003,51 @@ class _PropertyCard extends StatelessWidget {
               ),
             ),
           ),
-        Positioned(
-          right: 0,
-          bottom: 7,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: listing.featured ? _badgeGold : _projectGreen,
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(30),
+        if (!compact)
+          Positioned(
+            right: 0,
+            bottom: 7,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: listing.featured ? _badgeGold : _projectGreen,
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(30),
+                ),
               ),
-            ),
-            child: SizedBox(
-              width: 60,
-              height: 19,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (listing.featured)
-                    const Icon(
-                      Icons.star_rounded,
-                      size: 13,
-                      color: Colors.black,
-                    )
-                  else
-                    const _HomeAsset('buildings-icon', width: 13, height: 13),
-                  const SizedBox(width: 3),
-                  Flexible(
-                    child: _Label(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 3,
+                  children: [
+                    if (listing.featured)
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 13,
+                        color: Colors.black,
+                      )
+                    else
+                      const ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                          Colors.black,
+                          BlendMode.srcIn,
+                        ),
+                        child: _HomeAsset(
+                          'buildings-icon',
+                          width: 13,
+                          height: 13,
+                        ),
+                      ),
+                    _Label(
                       listing.featured ? 'مميز' : 'مشروع',
                       size: 10,
-                      color: listing.featured ? Colors.black : Colors.white,
                       weight: FontWeight.w600,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
     final details = Padding(
@@ -1037,12 +1069,20 @@ class _PropertyCard extends StatelessWidget {
                   color: Color(0xFFB4B4B4),
                 ),
                 selectedIcon: const Icon(Icons.favorite, color: _red),
-                style: IconButton.styleFrom(
-                  iconSize: 16,
-                  minimumSize: const Size.square(32),
-                  padding: EdgeInsets.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+                style:
+                    IconButton.styleFrom(
+                      iconSize: 16,
+                      minimumSize: const Size.square(32),
+                      padding: EdgeInsets.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      splashFactory: NoSplash.splashFactory,
+                    ).copyWith(
+                      overlayColor: WidgetStateProperty.resolveWith(
+                        (states) => states.contains(WidgetState.pressed)
+                            ? Colors.transparent
+                            : null,
+                      ),
+                    ),
               ),
             ],
           ),
@@ -1201,7 +1241,6 @@ class _PromotionState extends State<_Promotion> {
 
   @override
   Widget build(BuildContext context) {
-    const arrow = _HomeAsset('home/slider-circle-icon', width: 30, height: 30);
     return Column(
       children: [
         SizedBox(
@@ -1278,18 +1317,16 @@ class _PromotionState extends State<_Promotion> {
               ),
               PositionedDirectional(
                 start: 7,
-                child: IconButton(
-                  tooltip: 'السابق',
+                child: _PromotionArrow(
+                  previous: true,
                   onPressed: () => _goTo(_page - 1),
-                  icon: Transform.flip(flipX: true, child: arrow),
                 ),
               ),
               PositionedDirectional(
                 end: 7,
-                child: IconButton(
-                  tooltip: 'التالي',
+                child: _PromotionArrow(
+                  previous: false,
                   onPressed: () => _goTo(_page + 1),
-                  icon: arrow,
                 ),
               ),
             ],
@@ -1298,6 +1335,42 @@ class _PromotionState extends State<_Promotion> {
         const SizedBox(height: 7),
         _Dots(count: widget.slides.length, selected: _page, onSelected: _goTo),
       ],
+    );
+  }
+}
+
+class _PromotionArrow extends StatelessWidget {
+  const _PromotionArrow({required this.previous, required this.onPressed});
+
+  static final _blur = ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5);
+
+  final bool previous;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: previous ? 'السابق' : 'التالي',
+      onPressed: onPressed,
+      icon: ClipOval(
+        child: BackdropFilter(
+          filter: _blur,
+          child: ColoredBox(
+            color: const Color(0x48FFFFFF),
+            child: Padding(
+              padding: const EdgeInsets.all(2),
+              child: Transform.flip(
+                flipX: previous,
+                child: const _HomeAsset(
+                  'home/slider-circle-icon',
+                  width: 30,
+                  height: 30,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1369,7 +1442,13 @@ class _HomeBottomBar extends StatelessWidget {
     ),
     (
       HomeDestination.market,
-      Icon(Icons.storefront_outlined, size: 21, color: Color(0xFF484C52)),
+      Image(
+        image: AssetImage('assets/home/market-icon.png'),
+        width: 24,
+        height: 24,
+        fit: BoxFit.contain,
+        excludeFromSemantics: true,
+      ),
       'السوق',
     ),
     (
@@ -1390,94 +1469,80 @@ class _HomeBottomBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 18),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 393),
-            child: SizedBox(
-              height: 80,
-              child: Stack(
-                alignment: Alignment.bottomCenter,
-                children: [
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: 56,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x1A000000),
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Row(
-                    textDirection: TextDirection.ltr,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      for (final (destination, icon, label) in _items)
-                        Expanded(
-                          child: destination == HomeDestination.home
-                              ? Padding(
-                                  padding: const EdgeInsets.only(bottom: 17),
-                                  child: Semantics(
-                                    selected: true,
-                                    button: true,
-                                    child: Tooltip(
-                                      message: label,
-                                      child: Material(
-                                        color: _blue,
-                                        elevation: 4,
-                                        shape: const CircleBorder(
-                                          side: BorderSide(
-                                            color: Colors.white,
-                                            width: 4,
-                                          ),
-                                        ),
-                                        clipBehavior: Clip.antiAlias,
-                                        child: InkWell(
-                                          onTap: onSelected == null
-                                              ? null
-                                              : () => onSelected!(destination),
-                                          child: SizedBox.square(
-                                            dimension: 63,
-                                            child: Center(child: icon),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : InkWell(
-                                  onTap: onSelected == null
-                                      ? null
-                                      : () => onSelected!(destination),
-                                  child: SizedBox(
-                                    height: 56,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        SizedBox(
-                                          height: 24,
-                                          child: Center(child: icon),
-                                        ),
-                                        const SizedBox(height: 3),
-                                        _Label(label, size: 11, color: _blue),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                        ),
-                    ],
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(18),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x1A000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
                   ),
                 ],
               ),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 22),
+                child: Row(
+                  textDirection: TextDirection.ltr,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final (destination, icon, label) in _items)
+                      Expanded(child: _destination(destination, icon, label)),
+                  ],
+                ),
+              ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _destination(HomeDestination destination, Widget icon, String label) {
+    final VoidCallback? onTap = onSelected == null
+        ? null
+        : () => onSelected!(destination);
+    if (destination == HomeDestination.home) {
+      return Center(
+        heightFactor: 1,
+        child: Semantics(
+          selected: true,
+          button: true,
+          child: Tooltip(
+            message: label,
+            child: Material(
+              color: _blue,
+              elevation: 4,
+              shape: const CircleBorder(
+                side: BorderSide(color: Colors.white, width: 4),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                child: SizedBox.square(
+                  dimension: 63,
+                  child: Center(child: icon),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        height: 48,
+        child: Column(
+          spacing: 3,
+          children: [
+            SizedBox(height: 24, child: Center(child: icon)),
+            _Label(label, size: 11, color: _blue),
+          ],
         ),
       ),
     );

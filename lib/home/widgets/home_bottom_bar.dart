@@ -76,32 +76,41 @@ class HomeBottomBar extends StatelessWidget {
   }
 
   Widget _panel() {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 5,
-            offset: Offset(0, -2),
+    return Stack(
+      children: [
+        const Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(18),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x14000000),
+                    blurRadius: 5,
+                    offset: Offset(0, -2),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.only(top: 10, bottom: 22),
-        child: Row(
-          textDirection: TextDirection.ltr,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final (destination, icon, label) in _leadingItems)
-              Expanded(child: _destination(destination, icon, label)),
-            const Spacer(),
-            for (final (destination, icon, label) in _trailingItems)
-              Expanded(child: _destination(destination, icon, label)),
-          ],
         ),
-      ),
+        Padding(
+          padding: const EdgeInsets.only(top: 10, bottom: 22),
+          child: Row(
+            textDirection: TextDirection.ltr,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final (destination, icon, label) in _leadingItems)
+                Expanded(child: _destination(destination, icon, label)),
+              const Spacer(),
+              for (final (destination, icon, label) in _trailingItems)
+                Expanded(child: _destination(destination, icon, label)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

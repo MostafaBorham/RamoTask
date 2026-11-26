@@ -447,11 +447,17 @@ void main() {
       tester.widget<Row>(row).crossAxisAlignment,
       CrossAxisAlignment.start,
     );
-    final panel = find
-        .ancestor(of: row, matching: find.byType(DecoratedBox))
+    final panelStack = find
+        .ancestor(of: row, matching: find.byType(Stack))
         .first;
+    final panel = find.descendant(
+      of: panelStack,
+      matching: find.byType(DecoratedBox),
+    );
     final decoration =
         tester.widget<DecoratedBox>(panel).decoration as BoxDecoration;
+    expect(decoration.color, isNull);
+    expect(tester.getRect(find.byType(ListView).first).bottom, 844);
     expect(
       decoration.borderRadius,
       const BorderRadius.vertical(bottom: Radius.circular(18)),
@@ -473,6 +479,14 @@ void main() {
     await tester.tapAt(homeBounds.topCenter + const Offset(0, 8));
     await tester.tap(market);
     expect(destinations, [HomeDestination.home, HomeDestination.market]);
+
+    final scroll = tester.state<ScrollableState>(find.byType(Scrollable).first);
+    await tester.dragFrom(
+      tester.getRect(panel).bottomCenter - const Offset(0, 8),
+      const Offset(0, -180),
+    );
+    await tester.pumpAndSettle();
+    expect(scroll.position.pixels, greaterThan(0));
   });
 
   testWidgets('City and news cards load their shared cover assets', (

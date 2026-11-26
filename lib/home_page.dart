@@ -3,9 +3,8 @@ import 'package:flutter/services.dart';
 
 /// The RTL home screen from the e-RAMO Figma design.
 ///
-/// Map the CSS image names to Flutter assets in [images]. For example,
-/// 'ar logo': AssetImage('assets/logo.png'). Register bundled assets and the
-/// Noto Kufi Arabic font in the host app's pubspec.yaml.
+/// Provide banner and listing photos by their Figma image names in [images].
+/// The bundled logo can also be overridden with the 'ar logo' key.
 class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
@@ -242,20 +241,19 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.fromLTRB(23, 12, 23, 16),
         child: Column(
           children: [
-            if (logo == null)
-              const SizedBox(
-                height: 44,
-                child: Center(
-                  child: _Label(
-                    'e-RAMO',
-                    size: 21,
-                    weight: FontWeight.w700,
-                    color: _blue,
-                  ),
-                ),
-              )
-            else
-              Image(image: logo, width: 98, height: 44, fit: BoxFit.contain),
+            SizedBox(
+              height: 44,
+              child: Center(
+                child: logo == null
+                    ? const _HomeAsset('app-logo', width: 98, height: 28)
+                    : Image(
+                        image: logo,
+                        width: 98,
+                        height: 44,
+                        fit: BoxFit.contain,
+                      ),
+              ),
+            ),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -289,18 +287,22 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 _HeaderAction(
-                  Icons.chat_bubble_outline,
+                  const _HomeAsset('message-icon', width: 26, height: 26),
                   'الرسائل',
                   count: '5',
                   onPressed: widget.onMessages,
                 ),
                 _HeaderAction(
-                  Icons.notifications,
+                  const _HomeAsset('notification-icon', width: 19, height: 25),
                   'الإشعارات',
                   count: '2',
                   onPressed: widget.onNotifications,
                 ),
-                _HeaderAction(Icons.menu, 'القائمة', onPressed: widget.onMenu),
+                _HeaderAction(
+                  const Icon(Icons.menu, color: _blue, size: 23),
+                  'القائمة',
+                  onPressed: widget.onMenu,
+                ),
               ],
             ),
             const SizedBox(height: 6),
@@ -526,10 +528,29 @@ class _Photo extends StatelessWidget {
   }
 }
 
+class _HomeAsset extends StatelessWidget {
+  const _HomeAsset(this.name, {required this.width, required this.height});
+
+  final String name;
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      'assets/home/$name.png',
+      width: width,
+      height: height,
+      fit: BoxFit.contain,
+      excludeFromSemantics: true,
+    );
+  }
+}
+
 class _HeaderAction extends StatelessWidget {
   const _HeaderAction(this.icon, this.label, {this.count, this.onPressed});
 
-  final IconData icon;
+  final Widget icon;
   final String label;
   final String? count;
   final VoidCallback? onPressed;
@@ -545,7 +566,7 @@ class _HeaderAction extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Icon(icon, color: _blue, size: 23),
+            icon,
             if (count != null)
               PositionedDirectional(
                 top: 0,
@@ -925,11 +946,19 @@ class _PropertyCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      listing.featured ? Icons.star_rounded : Icons.apartment,
-                      size: 13,
-                      color: listing.featured ? Colors.black : Colors.white,
-                    ),
+                    if (listing.featured)
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 13,
+                        color: Colors.black,
+                      )
+                    else
+                      Image.asset(
+                        'assets/buildings-icon.png',
+                        width: 13,
+                        height: 13,
+                        excludeFromSemantics: true,
+                      ),
                     const SizedBox(width: 3),
                     _Label(
                       listing.featured ? 'مميز' : 'مشروع',
@@ -966,12 +995,15 @@ class _PropertyCard extends StatelessWidget {
             const SizedBox(height: 9),
             const Row(
               children: [
-                _IconLabel(Icons.bed_outlined, '10'),
-                SizedBox(width: 8),
-                _IconLabel(Icons.bathtub_outlined, '5'),
+                _IconLabel(_HomeAsset('bed-icon', width: 14, height: 10), '10'),
                 SizedBox(width: 8),
                 _IconLabel(
-                  Icons.square_foot,
+                  _HomeAsset('pathroom-icon', width: 16, height: 16),
+                  '5',
+                ),
+                SizedBox(width: 8),
+                _IconLabel(
+                  _HomeAsset('space-square-icon', width: 13, height: 13),
                   '8,725sqft',
                   direction: TextDirection.ltr,
                 ),
@@ -985,9 +1017,15 @@ class _PropertyCard extends StatelessWidget {
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _IconLabel(Icons.location_on_outlined, _location),
+                  _IconLabel(
+                    _HomeAsset('location-icon', width: 10, height: 13),
+                    _location,
+                  ),
                   SizedBox(height: 5),
-                  _IconLabel(Icons.access_time, 'منذ 4 ايام'),
+                  _IconLabel(
+                    Icon(Icons.access_time, size: 14, color: _grey),
+                    'منذ 4 ايام',
+                  ),
                 ],
               ),
               Column(
@@ -1037,7 +1075,7 @@ class _PropertyCard extends StatelessWidget {
 class _IconLabel extends StatelessWidget {
   const _IconLabel(this.icon, this.label, {this.direction});
 
-  final IconData icon;
+  final Widget icon;
   final String label;
   final TextDirection? direction;
 
@@ -1046,7 +1084,7 @@ class _IconLabel extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: _grey),
+        icon,
         const SizedBox(width: 3),
         _Label(label, size: 10, color: _grey, direction: direction),
       ],
@@ -1245,11 +1283,31 @@ class _HomeBottomBar extends StatelessWidget {
   final ValueChanged<HomeDestination>? onSelected;
 
   static const _items = [
-    (HomeDestination.properties, Icons.apartment_outlined, 'عقاراتي'),
-    (HomeDestination.offers, Icons.local_fire_department_outlined, 'العروض'),
-    (HomeDestination.home, Icons.home_outlined, 'الرئيسية'),
-    (HomeDestination.market, Icons.storefront_outlined, 'السوق'),
-    (HomeDestination.developers, Icons.engineering_outlined, 'المطورون'),
+    (
+      HomeDestination.properties,
+      _HomeAsset('my-reel-states-icon', width: 24, height: 24),
+      'عقاراتي',
+    ),
+    (
+      HomeDestination.offers,
+      _HomeAsset('offers-icon', width: 17, height: 20),
+      'العروض',
+    ),
+    (
+      HomeDestination.home,
+      _HomeAsset('home-icon', width: 35, height: 35),
+      'الرئيسية',
+    ),
+    (
+      HomeDestination.market,
+      Icon(Icons.storefront_outlined, size: 21, color: Color(0xFF484C52)),
+      'السوق',
+    ),
+    (
+      HomeDestination.developers,
+      _HomeAsset('developers-icon', width: 29, height: 21),
+      'المطورون',
+    ),
   ];
 
   @override
@@ -1317,11 +1375,7 @@ class _HomeBottomBar extends StatelessWidget {
                                               : () => onSelected!(destination),
                                           child: SizedBox.square(
                                             dimension: 63,
-                                            child: Icon(
-                                              icon,
-                                              color: Colors.white,
-                                              size: 30,
-                                            ),
+                                            child: Center(child: icon),
                                           ),
                                         ),
                                       ),
@@ -1338,7 +1392,10 @@ class _HomeBottomBar extends StatelessWidget {
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Icon(icon, size: 21, color: _blue),
+                                        SizedBox(
+                                          height: 24,
+                                          child: Center(child: icon),
+                                        ),
                                         const SizedBox(height: 3),
                                         _Label(label, size: 11, color: _blue),
                                       ],

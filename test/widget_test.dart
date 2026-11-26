@@ -55,6 +55,8 @@ void main() {
     'Header matches the search layout and keeps bottom-right counts',
     (tester) async {
       _mobileViewport(tester, width: 428);
+      tester.view.padding = const FakeViewPadding(top: 24);
+      addTearDown(tester.view.resetPadding);
       await tester.pumpWidget(const MyApp());
 
       expect(find.byType(HomePage), findsOneWidget);
@@ -329,6 +331,17 @@ void main() {
       await tester.tap(rent);
       await tester.pumpAndSettle();
       expect(saleCard, findsNothing);
+      final rentCard = find
+          .ancestor(
+            of: find.text('4,000, ج.م شهريا'),
+            matching: find.byType(Semantics),
+          )
+          .first;
+      final rentBadge = find.descendant(
+        of: rentCard,
+        matching: find.text('للإيجار'),
+      );
+      expect(badgeColor(rentBadge), const Color(0xFFD9D9D9));
       await tester.tap(all);
       await tester.pumpAndSettle();
       expect(inCard(find.byIcon(Icons.favorite)), findsOneWidget);
@@ -340,7 +353,7 @@ void main() {
       expect(opened.single, 'شقة سكنية للبيع تشطيب سوبر ...');
 
       await _scrollTo(tester, find.text('اهم المشاريع العقارية في مصر'));
-      expect(badgeColor(find.text('مشروع').first), const Color(0xFF13D142));
+      expect(badgeColor(find.text('مشروع').first), const Color(0xFF2A803F));
     },
   );
 
@@ -376,7 +389,7 @@ void main() {
     }
   });
 
-  testWidgets('Bottom navigation uses the market asset and top-aligned items', (
+  testWidgets('Home button is half above the bottom navigation and tappable', (
     tester,
   ) async {
     _mobileViewport(tester);
@@ -406,8 +419,21 @@ void main() {
     );
     expect(tester.getRect(row).top - tester.getRect(panel).top, 10);
     expect(tester.getRect(panel).bottom - tester.getRect(row).bottom, 22);
+    final shadow = decoration.boxShadow!.single;
+    expect(shadow.offset.dy, lessThan(0));
+    expect(shadow.color.a, lessThan(0.1));
+
+    final homeButton = find
+        .ancestor(
+          of: _svg('assets/home-icon.svg'),
+          matching: find.byType(Material),
+        )
+        .first;
+    final homeBounds = tester.getRect(homeButton);
+    expect(homeBounds.center.dy, tester.getRect(panel).top);
+    await tester.tapAt(homeBounds.topCenter + const Offset(0, 8));
     await tester.tap(market);
-    expect(destinations.single, HomeDestination.market);
+    expect(destinations, [HomeDestination.home, HomeDestination.market]);
   });
 
   testWidgets('City and news cards load their shared cover assets', (
